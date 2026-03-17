@@ -13,6 +13,18 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
+      major:
+        update-types:
+          - "major"
+        patterns:
+          - "*"
   - package-ecosystem: "terraform"
     directory: "/infra/terraform"
     schedule:
@@ -26,6 +38,18 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
+      major:
+        update-types:
+          - "major"
+        patterns:
+          - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -40,3 +64,15 @@ updates:
     open-pull-requests-limit: 5
     allow:
       - dependency-type: "all"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
+      major:
+        update-types:
+          - "major"
+        patterns:
+          - "*"
