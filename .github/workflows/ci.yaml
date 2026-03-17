@@ -1,0 +1,30 @@
+name: CI Security Scan
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.2
+
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          config_file: configs/checkov.yml
+
+      - name: Run Trivy on repo
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          scan-type: fs
+          path: .
+          trivy-config: configs/trivy.yaml
