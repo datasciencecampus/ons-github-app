@@ -198,9 +198,23 @@ celerybeat.pid
 .venv
 env/
 venv/
+
+# Terraform
+*.tfvars
+*.tfvars.json
 ENV/
 env.bak/
 venv.bak/
+
+# Terraform state and backup files
+.terraform/
+*/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+.terraform.lock.hcl
+.terraformrc
+terraform.rc
 
 # Spyder project settings
 .spyderproject

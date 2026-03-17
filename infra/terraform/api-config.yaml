@@ -1,0 +1,18 @@
+# see https://spec.openapis.org/oas/latest.html for guidance on creating OpenAPI specifications
+# https://docs.cloud.google.com/endpoints/docs/openapi/openapi-extensions for-google-cloud-endpoints for GCP-specific extensions
+swagger: "2.0"
+info:
+  title: GitHub App Webhook API
+  version: 1.0.0
+  description: API for handling traffic from GitHub App webhooks and forwarding to Cloud Run service.
+paths:
+  /webhooks/github:
+    post:
+      summary: Handle webhook requests
+      operationId: handleWebhook
+      responses:
+        200:
+          description: OK
+      x-google-backend:
+        address: ${service_url}
+        path_translation: APPEND_PATH_TO_ADDRESS

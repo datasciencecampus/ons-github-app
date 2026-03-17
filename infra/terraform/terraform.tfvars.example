@@ -1,0 +1,24 @@
+project_id = "your-project-id"
+region     = "region from available regions list"
+
+service_name = "a name for your service"
+artifact_repo = "a name for your artifact repository"
+
+kms_key_resource_name = "projects/PROJECT_ID/locations/LOCATION/keyRings/KEY_RING_NAME/cryptoKeys/CRYPTO_KEY_NAME"
+
+# Example image URI (after you push an image)
+image = "REGION-docker.pkg.dev/PROJECT_ID/SERVICE_NAME/ARTIFACT_REPO_NAME:latest"
+
+github_app_id         = "123456"
+
+github_private_key = <<EOT
+-----BEGIN FAKE PRIVATE KEY-----
+THIS_IS_NOT_A_REAL_KEY
+REPLACE_ME
+-----END FAKE PRIVATE KEY-----
+EOT
+
+github_webhook_secret = "replace-me" # pragma: allowlist secret
+
+# Optional: e.g. "pull_request,push"
+github_accepted_events = ""

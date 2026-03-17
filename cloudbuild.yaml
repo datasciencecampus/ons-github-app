@@ -1,0 +1,23 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "gcr.io/$PROJECT_ID/ons-github-app:$COMMIT_SHA", "."]
+  - name: gcr.io/cloud-builders/docker
+    args: ["push", "gcr.io/$PROJECT_ID/ons-github-app:$COMMIT_SHA"]
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - "${_SERVICE_NAME}"
+      - --image
+      - "gcr.io/$PROJECT_ID/ons-github-app:$COMMIT_SHA"
+      - --region
+      - "${_REGION}"
+      - --platform
+      - managed
+      - --allow-unauthenticated
+substitutions:
+  _SERVICE_NAME: ons-github-app
+  _REGION: europe-west2
+images:
+  - "gcr.io/$PROJECT_ID/ons-github-app:$COMMIT_SHA"
