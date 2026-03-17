@@ -1,49 +1,78 @@
-# Repository name
 
-# Introduction
-## About
-*Describe what this repo contains and what the project is.*
+# ons-github-app
+
+## Overview
+
+A GitHub App backend for secure webhook processing and automation, deployed on Google Cloud Run. The app validates GitHub webhook signatures, manages installation tokens, and routes events for further processing. Infrastructure is provisioned with Terraform, and security is enforced via pre-commit hooks and CI scans.
+
+## Features
+
+- FastAPI-based webhook handler (`/webhooks/github`)
+- Signature verification for GitHub webhooks
+- JWT-based GitHub App authentication
+- Google Cloud Run deployment (Dockerized)
+- Terraform-managed GCP resources (Cloud Run, Artifact Registry, API Gateway)
+- Security scanning (Checkov, Trivy) via CI
+- Pre-commit hooks for secret/key detection
 
 ## Installation
-*Describe technical set-up. Such as the required dependencies.*
 
-### Pre-commit actions
-This repository contains a configuration of pre-commit hooks. These are language agnostic and focussed on repository security (such as detection of passwords and API keys). If approaching this project as a developer, you are encouraged to install and enable `pre-commits` by running the following in your shell:
-   1. Install `pre-commit`:
+1. Clone the repo and create a Python virtual environment:
 
-      ```
-      pip install pre-commit
-      ```
-   2. Enable `pre-commit`:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
 
-      ```
-      pre-commit install
-      ```
-Once pre-commits are activated, whenever you commit to this repository a series of checks will be executed. The pre-commits include checking for security keys, large files and unresolved merge conflict headers. The use of active pre-commits are highly encouraged and the given hooks can be expanded with Python or R specific hooks that can automate the code style and linting. For example, the `flake8` and `black` hooks are useful for maintaining consistent Python code formatting.
+2. Install pre-commit hooks:
 
-**NOTE:** Pre-commit hooks execute Python, so it expects a working Python build.
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+
+3. Set required environment variables:
+   - `GITHUB_APP_ID`
+   - `GITHUB_PRIVATE_KEY`
+   - `GITHUB_WEBHOOK_SECRET`
+   - `GITHUB_ACCEPTED_EVENTS` (optional, comma-separated)
 
 ## Usage
-*Explain how to use the things in the repo.*
 
-### Workflow
-*You may wish to consider generating a graph to show your project workflow. GitHub markdown provides native support for [mermaid](https://mermaid.js.org/syntax/flowchart.html), an example of which is provided below:*
+- Run locally:
+
+  ```bash
+  uvicorn src.app:app --host 0.0.0.0 --port 8080
+  ```
+
+- Health check endpoint: `GET /healthz`
+- Webhook endpoint: `POST /webhooks/github`
+
+## Deployment
+
+- Build and deploy with Docker and Google Cloud Build:
+  - See `cloudbuild.yaml` and `deploy.sh` for build and deployment steps.
+- Infrastructure setup:
+  - See `infra/terraform/README.md` for Terraform instructions.
+
+## Security
+
+- Pre-commit hooks scan for secrets and large files.
+- CI workflow runs Checkov and Trivy scans on every push/PR.
+- Sensitive values are managed via environment variables and never committed.
+
+## Project Workflow
 
 ```mermaid
 flowchart TD
-   id1[(Some data)] --> id2(Some processing)
-   id3[(More data)] --> id2
-   id2 --> id4[Some output]
+   code[Source Code] --> build[Build & Scan]
+   build --> deploy[Deploy to Cloud Run]
+   deploy --> api[API Gateway]
+   api --> webhook[Webhook Handler]
+   webhook --> process[Event Processing]
 ```
 
-# License
+## License
 
-<!-- Unless stated otherwise, the codebase is released under [the MIT Licence][mit]. -->
-
-The code, unless otherwise stated, is released under [the MIT Licence][mit].
-
-The documentation for this work is subject to [© Crown copyright][copyright] and is available under the terms of the [Open Government 3.0][ogl] licence.
-
-[mit]: LICENCE
-[copyright]: http://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
-[ogl]: http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+The code is released under the MIT License. Documentation is © Crown copyright and available under the Open Government 3.0 license.
