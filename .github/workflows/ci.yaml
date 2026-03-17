@@ -1,4 +1,6 @@
 name: CI Security Scan
+permissions:
+  contents: read
 
 on:
   push:
