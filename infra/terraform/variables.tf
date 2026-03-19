@@ -32,18 +32,6 @@ variable "github_app_id" {
   description = "GitHub App ID"
 }
 
-variable "github_private_key" {
-  type        = string
-  description = "GitHub App private key (PEM contents; use \\n for newlines)"
-  sensitive   = true
-}
-
-variable "github_webhook_secret" {
-  type        = string
-  description = "GitHub webhook secret"
-  sensitive   = true
-}
-
 variable "github_accepted_events" {
   type        = string
   description = "Optional comma-separated events allowlist"
@@ -53,10 +41,22 @@ variable "github_accepted_events" {
 variable "services" {
   type        = list(string)
   description = "Additional GCP services to enable"
-  default     = ["run.googleapis.com", "artifactregistry.googleapis.com", "iam.googleapis.com", "apigateway.googleapis.com"]
+  default     = ["run.googleapis.com", "artifactregistry.googleapis.com", "iam.googleapis.com", "apigateway.googleapis.com", "secretmanager.googleapis.com"]
 }
 
 variable "kms_key_resource_name" {
   description = "The resource name of the KMS crypto key used for state encryption. This should be in the format: projects/{project}/locations/{location}/keyRings/{keyRing}/cryptoKeys/{cryptoKey}"
   type        = string
+}
+
+variable "github_webhook_secret" {
+  description = "GitHub webhook secret for securing webhook payloads"
+  type        = string
+  sensitive   = true
+}
+
+variable "github_private_key" {
+  description = "GitHub App private key (PEM format, with \\n for newlines)"
+  type        = string
+  sensitive   = true
 }

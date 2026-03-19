@@ -24,16 +24,14 @@ repos:
           - configs/.secrets.baseline
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.99.5
+    rev: v1.105.0
     hooks:
       - id: terraform_fmt
       - id: terraform_validate
       - id: terraform_tflint
       - id: terraform_trivy
-        args:
-          - --args=--config=configs/trivy.yaml
   - repo: https://github.com/bridgecrewio/checkov.git
-    rev: 3.2.457
+    rev: 3.2.510
     hooks:
       - id: checkov
         args: [--config-file, ./configs/checkov.yml]

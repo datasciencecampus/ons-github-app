@@ -165,3 +165,39 @@ resource "google_cloud_run_service_iam_member" "gateway_invoker" {
   member     = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-apigateway.iam.gserviceaccount.com"
   depends_on = [google_cloud_run_v2_service.app, google_api_gateway_gateway.webhook]
 }
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/secret_manager_secret
+resource "google_secret_manager_secret" "github_private_key" {
+  project   = var.project_id
+  secret_id = "github-private-key"
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "github_private_key" {
+  secret      = google_secret_manager_secret.github_private_key.id
+  secret_data = var.github_private_key
+}
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/secret_manager_secret
+resource "google_secret_manager_secret" "github_webhook_secret" {
+  project   = var.project_id
+  secret_id = "github-webhook-secret"
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "github_webhook_secret" {
+  secret      = google_secret_manager_secret.github_webhook_secret.id
+  secret_data = var.github_webhook_secret
+}
