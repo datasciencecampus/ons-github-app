@@ -2,7 +2,7 @@ import hmac
 import hashlib
 from typing import Optional
 
-from src.config import get_env
+from src.config import get_secret
 
 
 def verify_signature(body: bytes, signature_header: Optional[str]) -> bool:
@@ -14,6 +14,6 @@ def verify_signature(body: bytes, signature_header: Optional[str]) -> bool:
         return False
 
     provided = signature_header[len(prefix):]
-    secret = get_env("GITHUB_WEBHOOK_SECRET").encode("utf-8")
+    secret = get_secret("GITHUB_WEBHOOK_SECRET", file_env="GITHUB_WEBHOOK_SECRET_FILE").encode("utf-8")
     digest = hmac.new(secret, body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(provided, digest)

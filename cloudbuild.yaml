@@ -1,8 +1,19 @@
 steps:
   - name: gcr.io/cloud-builders/docker
-    args: ["build", "-t", "gcr.io/$PROJECT_ID/ons-github-app:$COMMIT_SHA", "."]
+    args: ["build", "-t", "gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA", "."]
   - name: gcr.io/cloud-builders/docker
-    args: ["push", "gcr.io/$PROJECT_ID/ons-github-app:$COMMIT_SHA"]
+    args: ["push", "gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA"]
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -eu
+      - -c
+      - |
+        if [[ -z "${_GITHUB_APP_ID}" ]]; then
+          echo "ERROR: Missing required substitution _GITHUB_APP_ID (your GitHub App ID)."
+          echo "Set it on your trigger or pass: gcloud builds submit --substitutions=_GITHUB_APP_ID=123456"
+          exit 1
+        fi
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
     args:
@@ -10,14 +21,20 @@ steps:
       - deploy
       - "${_SERVICE_NAME}"
       - --image
-      - "gcr.io/$PROJECT_ID/ons-github-app:$COMMIT_SHA"
+      - "gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA"
       - --region
       - "${_REGION}"
       - --platform
       - managed
-      - --allow-unauthenticated
+      - --set-env-vars
+      - "GITHUB_APP_ID=${_GITHUB_APP_ID},GITHUB_ACCEPTED_EVENTS=pull_request,GITHUB_PRIVATE_KEY_FILE=/var/secrets/github_private_key,GITHUB_WEBHOOK_SECRET_FILE=/var/secrets/github_webhook_secret"
+      - --secret
+      - github-app-private-key=/var/secrets/github_private_key
+      - --secret
+      - github-webhook-secret=/var/secrets/github_webhook_secret
 substitutions:
   _SERVICE_NAME: ons-github-app
   _REGION: europe-west2
+  _GITHUB_APP_ID: ""
 images:
-  - "gcr.io/$PROJECT_ID/ons-github-app:$COMMIT_SHA"
+  - "gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA"

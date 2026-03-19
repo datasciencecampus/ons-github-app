@@ -16,7 +16,7 @@ This folder provisions all required Google Cloud resources for the ons-github-ap
 
    cp terraform.tfvars.example terraform.tfvars
 
-2. Edit `terraform.tfvars` to set your project, region, image URI, and GitHub App secrets.
+2. Edit `terraform.tfvars` to set your project, region, and (optionally) the image URI.
 
 3. Initialize and apply the Terraform configuration:
 
@@ -29,16 +29,20 @@ This folder provisions all required Google Cloud resources for the ons-github-ap
 
 ## Security & Secrets
 
-- **Never commit real secrets** (private keys, tokens, passwords) to version control.
-- Use `terraform.tfvars.example` as a template only; fill in real values in your local `terraform.tfvars`.
-- The Cloud Run service expects secrets via environment variables (see variables in main.tf).
-- Example secrets in this repo are placeholders only.
+- **Do not pass secret values via Terraform variables**. Terraform state is not an appropriate place to store the GitHub private key or webhook secret.
+- This module creates Secret Manager *containers*:
+   - `github-private-key`
+   - `github-webhook-secret`
+- Populate secret *versions* outside Terraform (e.g. with `gcloud secrets versions add ...`).
+- Cloud Run mounts these secrets as files and the app reads them via:
+   - `GITHUB_PRIVATE_KEY_FILE`
+   - `GITHUB_WEBHOOK_SECRET_FILE`
 
 ## Notes
 
-- The Cloud Run service expects an image URI in the `image` variable.
-- For unauthenticated access, set `allow_unauthenticated = true` (if supported in your configuration).
-- API Gateway is configured using `api-config.yaml` and routes traffic to the deployed service.
+- Two-phase workflow:
+   1) First apply with `image = ""` provisions APIs, service account, Artifact Registry, and Secret Manager secrets.
+   2) After pushing an image and adding secret versions, set `image` and apply again to create Cloud Run + API Gateway.
 
 ## Outputs
 

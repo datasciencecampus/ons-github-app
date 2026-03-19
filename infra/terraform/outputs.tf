@@ -15,5 +15,5 @@ output "artifact_registry_repo" {
 
 output "gateway_url" {
   description = "API Gateway URL"
-  value       = "https://${google_api_gateway_gateway.webhook.default_hostname}/webhooks/github"
+  value       = length(google_api_gateway_gateway.webhook) > 0 ? "https://${google_api_gateway_gateway.webhook[0].default_hostname}/webhooks/github" : null
 }

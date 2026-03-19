@@ -31,7 +31,9 @@ terraform {
     }
   }
   backend "gcs" {
-    bucket = "state__73460913194"
+    # Configure at init time, e.g.:
+    #   terraform init -backend-config="bucket=<state_bucket_name>"
+    # Bucket names are project-specific so we avoid hard-coding here.
   }
 }
 
@@ -43,6 +45,10 @@ provider "google" {
 provider "google-beta" {
   project = var.project_id
   region  = var.region
+}
+
+locals {
+  deploy_app = var.image != ""
 }
 
 # Enables required GCP APIs for Cloud Run, Artifact Registry, IAM, and API Gateway
@@ -77,7 +83,7 @@ resource "google_artifact_registry_repository" "app" {
 
 # Cloud Run service for the GitHub App (deployed only if image is provided)
 resource "google_cloud_run_v2_service" "app" {
-  count    = var.image != "" ? 1 : 0
+  count    = local.deploy_app ? 1 : 0
   name     = var.service_name
   location = var.region
 
@@ -93,13 +99,13 @@ resource "google_cloud_run_v2_service" "app" {
       }
 
       env {
-        name  = "GITHUB_PRIVATE_KEY"
-        value = var.github_private_key
+        name  = "GITHUB_PRIVATE_KEY_FILE"
+        value = "/var/secrets/github-private-key/private_key"
       }
 
       env {
-        name  = "GITHUB_WEBHOOK_SECRET"
-        value = var.github_webhook_secret
+        name  = "GITHUB_WEBHOOK_SECRET_FILE"
+        value = "/var/secrets/github-webhook-secret/webhook_secret"
       }
 
       env {
@@ -109,6 +115,38 @@ resource "google_cloud_run_v2_service" "app" {
 
       ports {
         container_port = 8080
+      }
+
+      volume_mounts {
+        name       = "github-private-key"
+        mount_path = "/var/secrets/github-private-key"
+      }
+
+      volume_mounts {
+        name       = "github-webhook-secret"
+        mount_path = "/var/secrets/github-webhook-secret"
+      }
+    }
+
+    volumes {
+      name = "github-private-key"
+      secret {
+        secret = google_secret_manager_secret.github_private_key.secret_id
+        items {
+          version = "latest"
+          path    = "private_key"
+        }
+      }
+    }
+
+    volumes {
+      name = "github-webhook-secret"
+      secret {
+        secret = google_secret_manager_secret.github_webhook_secret.secret_id
+        items {
+          version = "latest"
+          path    = "webhook_secret"
+        }
       }
     }
   }
@@ -124,15 +162,16 @@ data "google_project" "project" {}
 # API Gateway setup to route webhook traffic to Cloud Run
 resource "google_api_gateway_api" "webhook" {
   provider = google-beta
-  api_id   = "webhook-relay"
+  api_id   = "${var.service_name}-webhook"
   project  = var.project_id
 }
 
 # API Gateway config using OpenAPI spec (api-config.yaml)
 resource "google_api_gateway_api_config" "webhook" {
+  count         = local.deploy_app ? 1 : 0
   provider      = google-beta
   api           = google_api_gateway_api.webhook.api_id
-  api_config_id = "webhook-relay-config"
+  api_config_id = "${var.service_name}-webhook-config"
   project       = var.project_id
   openapi_documents {
     document {
@@ -147,9 +186,10 @@ resource "google_api_gateway_api_config" "webhook" {
 
 # API Gateway instance
 resource "google_api_gateway_gateway" "webhook" {
+  count      = local.deploy_app ? 1 : 0
   provider   = google-beta
-  gateway_id = "webhook-relay-gateway"
-  api_config = google_api_gateway_api_config.webhook.id
+  gateway_id = "${var.service_name}-webhook-gateway"
+  api_config = google_api_gateway_api_config.webhook[0].id
   project    = var.project_id
   region     = var.region
 }
@@ -158,7 +198,7 @@ resource "google_api_gateway_gateway" "webhook" {
 
 # Grant API Gateway permission to invoke the Cloud Run service
 resource "google_cloud_run_service_iam_member" "gateway_invoker" {
-  count      = var.image != "" ? 1 : 0
+  count      = local.deploy_app ? 1 : 0
   service    = google_cloud_run_v2_service.app[count.index].name //
   location   = var.region
   role       = "roles/run.invoker"
@@ -179,9 +219,11 @@ resource "google_secret_manager_secret" "github_private_key" {
   }
 }
 
-resource "google_secret_manager_secret_version" "github_private_key" {
-  secret      = google_secret_manager_secret.github_private_key.id
-  secret_data = var.github_private_key
+resource "google_secret_manager_secret_iam_member" "github_private_key_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.github_private_key.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.app.email}"
 }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/secret_manager_secret
@@ -197,7 +239,9 @@ resource "google_secret_manager_secret" "github_webhook_secret" {
   }
 }
 
-resource "google_secret_manager_secret_version" "github_webhook_secret" {
-  secret      = google_secret_manager_secret.github_webhook_secret.id
-  secret_data = var.github_webhook_secret
+resource "google_secret_manager_secret_iam_member" "github_webhook_secret_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.github_webhook_secret.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.app.email}"
 }

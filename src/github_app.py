@@ -5,13 +5,15 @@ import jwt
 import requests
 
 from src.config import get_env, normalize_private_key
+from src.config import get_secret
 
 GITHUB_API = "https://api.github.com"
 
 
 def create_app_jwt() -> str:
     app_id = get_env("GITHUB_APP_ID")
-    private_key = normalize_private_key(get_env("GITHUB_PRIVATE_KEY"))
+    private_key_raw = get_secret("GITHUB_PRIVATE_KEY", file_env="GITHUB_PRIVATE_KEY_FILE")
+    private_key = normalize_private_key(private_key_raw)
     now = int(time.time())
     payload = {
         "iat": now - 30,
@@ -32,3 +34,16 @@ def get_installation_token(installation_id: int) -> Dict[str, str]:
     response.raise_for_status()
     data = response.json()
     return {"token": data["token"], "expires_at": data["expires_at"]}
+
+
+def post_pr_comment(*, installation_id: int, repo_full_name: str, pr_number: int, body: str) -> None:
+    """Post a comment to a pull request using the GitHub App installation token."""
+
+    token = get_installation_token(installation_id)["token"]
+    url = f"{GITHUB_API}/repos/{repo_full_name}/issues/{pr_number}/comments"
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github+json",
+    }
+    response = requests.post(url, headers=headers, json={"body": body}, timeout=10)
+    response.raise_for_status()

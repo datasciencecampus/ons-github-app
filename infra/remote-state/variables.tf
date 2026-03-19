@@ -3,6 +3,12 @@ variable "project_id" {
   type        = string
 }
 
+variable "region" {
+  description = "GCP region/location for the KMS key ring used to encrypt Terraform state."
+  type        = string
+  default     = "europe-west2"
+}
+
 variable "storage_object_viewer_principal" {
   description = <<EOT
 The principal to be granted the Storage Object Viewer role on the state bucket. Must be a valid IAM principal string, e.g.:

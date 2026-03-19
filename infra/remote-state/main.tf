@@ -21,7 +21,7 @@ resource "google_project_service" "required_services" {
 
 resource "google_kms_key_ring" "state" {
   name     = "state-key-ring"
-  location = "europe-west2"
+  location = var.region
   project  = var.project_id
 }
 

@@ -6,19 +6,15 @@ artifact_repo = "a name for your artifact repository"
 
 kms_key_resource_name = "projects/PROJECT_ID/locations/LOCATION/keyRings/KEY_RING_NAME/cryptoKeys/CRYPTO_KEY_NAME"
 
-# Example image URI (after you push an image)
-image = "REGION-docker.pkg.dev/PROJECT_ID/SERVICE_NAME/ARTIFACT_REPO_NAME:latest"
+# Leave blank for the first apply (this provisions everything except Cloud Run + API Gateway)
+image = ""
 
 github_app_id         = "123456"
 
-github_private_key = <<EOT
------BEGIN FAKE PRIVATE KEY-----
-THIS_IS_NOT_A_REAL_KEY
-REPLACE_ME
------END FAKE PRIVATE KEY-----
-EOT
-
-github_webhook_secret = "replace-me" # pragma: allowlist secret
-
 # Optional: e.g. "pull_request,push"
 github_accepted_events = ""
+
+# Secrets are managed in Secret Manager (not in Terraform variables/state).
+# After your first `terraform apply`, add secret values with gcloud, e.g.:
+#   echo -n "<webhook-secret>" | gcloud secrets versions add github-webhook-secret --data-file=-
+#   gcloud secrets versions add github-private-key --data-file=/path/to/private-key.pem

@@ -24,7 +24,7 @@ variable "artifact_repo" {
 variable "image" {
   type        = string
   description = "Container image URI to deploy"
-  nullable    = true
+  default     = ""
 }
 
 variable "github_app_id" {
@@ -47,16 +47,4 @@ variable "services" {
 variable "kms_key_resource_name" {
   description = "The resource name of the KMS crypto key used for state encryption. This should be in the format: projects/{project}/locations/{location}/keyRings/{keyRing}/cryptoKeys/{cryptoKey}"
   type        = string
-}
-
-variable "github_webhook_secret" {
-  description = "GitHub webhook secret for securing webhook payloads"
-  type        = string
-  sensitive   = true
-}
-
-variable "github_private_key" {
-  description = "GitHub App private key (PEM format, with \\n for newlines)"
-  type        = string
-  sensitive   = true
 }
