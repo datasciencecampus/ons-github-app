@@ -7,6 +7,8 @@ A GitHub App backend for secure webhook processing and automation, deployed on G
 
 If you want to replicate the full setup (GCP remote state, Terraform apply phases, GitHub App creation, deploy + verification), follow the end-to-end tutorial in `docs/tutorial/README.md`.
 
+For architecture and security background (intended for technical architects, security colleagues, and interested engineers), see `docs/architecture/README.md`.
+
 ## Features
 
 - FastAPI-based webhook handler (`/webhooks/github`)

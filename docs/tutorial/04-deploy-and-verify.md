@@ -210,6 +210,11 @@ Set your GitHub App webhook URL to that value.
 
 1) Open a pull request in the repo where the app is installed.
 2) In GitHub → your PR, you should see a comment posted by the app.
+
+   Example output:
+
+   ![Example PR comment created by the GitHub App](../assets/screenshot-bot-pr-comment.png)
+
 3) If it doesn’t appear, check:
 
 - Cloud Run logs (look for `event=pull_request action=opened`)

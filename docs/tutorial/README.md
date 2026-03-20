@@ -30,3 +30,9 @@ This repo is designed for a **two-phase Terraform apply**:
 - 02: Remote state bootstrap — see 02-remote-state.md
 - 03: GitHub App setup — see 03-github-app.md
 - 04: Deploy & verify (local + cloud) — see 04-deploy-and-verify.md
+
+## Architecture and security
+
+- Architecture overview — see ../architecture/README.md
+- Design decisions — see ../architecture/design-decisions.md
+- Security considerations — see ../architecture/security.md
