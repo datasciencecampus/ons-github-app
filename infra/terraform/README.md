@@ -18,10 +18,17 @@ This folder provisions all required Google Cloud resources for the ons-github-ap
 
 2. Edit `terraform.tfvars` to set your project, region, and (optionally) the image URI.
 
-3. Initialize and apply the Terraform configuration:
+3. Initialize the Terraform configuration.
+
+This module uses a GCS backend which is intentionally configured at init time (bucket names are project-specific):
 
 ```bash
-   terraform init
+terraform init -backend-config="bucket=<state_bucket_name>"
+```
+
+4. Apply the Terraform configuration:
+
+```bash
    terraform apply
 ```
 
@@ -43,6 +50,8 @@ This folder provisions all required Google Cloud resources for the ons-github-ap
 - Two-phase workflow:
    1) First apply with `image = ""` provisions APIs, service account, Artifact Registry, and Secret Manager secrets.
    2) After pushing an image and adding secret versions, set `image` and apply again to create Cloud Run + API Gateway.
+
+For the end-to-end walkthrough (including remote state bootstrap and GitHub App setup), see `docs/tutorial/README.md`.
 
 ## Outputs
 

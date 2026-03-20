@@ -5,6 +5,8 @@
 
 A GitHub App backend for secure webhook processing and automation, deployed on Google Cloud Run. The app validates GitHub webhook signatures, manages installation tokens, and routes events for further processing. Infrastructure is provisioned with Terraform, and security is enforced via pre-commit hooks and CI scans.
 
+If you want to replicate the full setup (GCP remote state, Terraform apply phases, GitHub App creation, deploy + verification), follow the end-to-end tutorial in `docs/tutorial/README.md`.
+
 ## Features
 
 - FastAPI-based webhook handler (`/webhooks/github`)
@@ -34,8 +36,8 @@ A GitHub App backend for secure webhook processing and automation, deployed on G
 
 3. Set required environment variables:
    - `GITHUB_APP_ID`
-   - `GITHUB_PRIVATE_KEY`
-   - `GITHUB_WEBHOOK_SECRET`
+   - `GITHUB_PRIVATE_KEY_FILE`
+   - `GITHUB_WEBHOOK_SECRET_FILE`
    - `GITHUB_ACCEPTED_EVENTS` (optional, comma-separated)
 
 ## Usage
@@ -51,16 +53,20 @@ A GitHub App backend for secure webhook processing and automation, deployed on G
 
 ## Deployment
 
-- Build and deploy with Docker and Google Cloud Build:
-  - See `cloudbuild.yaml` and `deploy.sh` for build and deployment steps.
-- Infrastructure setup:
-  - See `infra/terraform/README.md` for Terraform instructions.
+- Canonical workflow: Terraform-managed deployment (Cloud Run + API Gateway) with Artifact Registry images and secrets mounted from Secret Manager.
+   - Start here: `docs/tutorial/README.md`
+   - Terraform module docs: `infra/terraform/README.md`
+
+- Optional helpers:
+   - `deploy.sh` can build and push a container image to Artifact Registry.
+   - `cloudbuild.yaml` can build and push an image in Cloud Build.
+   These helpers intentionally do not provision infra; Terraform remains the source of truth.
 
 ## Security
 
 - Pre-commit hooks scan for secrets and large files.
 - CI workflow runs Checkov and Trivy scans on every push/PR.
-- Sensitive values are managed via environment variables and never committed.
+- Sensitive values are managed via Secret Manager (Cloud Run) or local secret files (development) and never committed.
 
 ## Project Workflow
 

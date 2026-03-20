@@ -53,16 +53,21 @@ locals {
 
 # Enables required GCP APIs for Cloud Run, Artifact Registry, IAM, and API Gateway
 resource "google_project_service" "services" {
-  for_each           = toset(var.services)
-  project            = var.project_id
-  service            = each.value
-  disable_on_destroy = true
+  for_each = toset(var.services)
+  project  = var.project_id
+  service  = each.value
+  # Disabling APIs on destroy can break Terraform refresh/destroy of remaining
+  # resources (e.g. API Gateway returning 403 if apigateway.googleapis.com is disabled).
+  # Keep services enabled to make teardown reliable and repeatable.
+  disable_on_destroy = false
 }
 
 # Service account for the Cloud Run app
 resource "google_service_account" "app" {
   account_id   = "${var.service_name}-sa"
   display_name = "${var.service_name} service account"
+
+  depends_on = [google_project_service.services]
 }
 
 resource "google_kms_crypto_key_iam_member" "crypto_key" {
@@ -165,6 +170,8 @@ resource "google_api_gateway_api" "webhook" {
   provider = google-beta
   api_id   = "${var.service_name}-webhook"
   project  = var.project_id
+
+  depends_on = [google_project_service.services]
 }
 
 # API Gateway config using OpenAPI spec (api-config.yaml)
@@ -218,6 +225,8 @@ resource "google_secret_manager_secret" "github_private_key" {
       }
     }
   }
+
+  depends_on = [google_project_service.services]
 }
 
 resource "google_secret_manager_secret_iam_member" "github_private_key_accessor" {
@@ -238,6 +247,8 @@ resource "google_secret_manager_secret" "github_webhook_secret" {
       }
     }
   }
+
+  depends_on = [google_project_service.services]
 }
 
 resource "google_secret_manager_secret_iam_member" "github_webhook_secret_accessor" {

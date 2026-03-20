@@ -41,7 +41,6 @@ Edit `terraform.tfvars`:
 
 ```bash
 cd infra/terraform
-terraform init
 terraform apply
 ```
 
@@ -57,55 +56,80 @@ What you should get after phase 1:
 
 This is intentionally **outside Terraform** so secret values do not end up in Terraform state.
 
+This tutorial uses a single approach: secrets are first stored as local files under `./local-secrets/`, then:
+
+- those same files are used for local runs
+- and their contents are uploaded to Secret Manager (as secret versions)
+
+Create the local secret files now:
+
+```bash
+mkdir -p ./local-secrets/github-private-key ./local-secrets/github-webhook-secret
+cp /path/to/private-key.pem ./local-secrets/github-private-key/private_key
+printf "%s" "<your-webhook-secret>" > ./local-secrets/github-webhook-secret/webhook_secret
+```
+
 ### 2.1 Webhook secret
 
 ```bash
-echo -n "<your-webhook-secret>" | gcloud secrets versions add github-webhook-secret --data-file=-
+gcloud secrets versions add github-webhook-secret --data-file=./local-secrets/github-webhook-secret/webhook_secret
 ```
 
 ### 2.2 Private key
 
 ```bash
-gcloud secrets versions add github-private-key --data-file=/path/to/private-key.pem
+gcloud secrets versions add github-private-key --data-file=./local-secrets/github-private-key/private_key
 ```
 
 ## 3) Test locally (before deploying)
 
-### Option A: Local env vars (simple)
+This repo assumes a single local strategy: secrets are stored as files in `./local-secrets/` and the app reads them via `GITHUB_PRIVATE_KEY_FILE` and `GITHUB_WEBHOOK_SECRET_FILE`.
+
+You created `./local-secrets/` in step 2; the commands below read from those files.
+
+### 3.1 Run locally (no Docker)
 
 Create a `.env` (do not commit):
 
 ```env
 GITHUB_APP_ID=123456
-GITHUB_PRIVATE_KEY=<paste-private-key-as-a-single-line-with-literal-\n-escapes>
-GITHUB_WEBHOOK_SECRET=<your-webhook-secret>
+GITHUB_PRIVATE_KEY_FILE=./local-secrets/github-private-key/private_key
+GITHUB_WEBHOOK_SECRET_FILE=./local-secrets/github-webhook-secret/webhook_secret
 GITHUB_ACCEPTED_EVENTS=pull_request
 ```
 
-Run:
+Load it into your shell and run the API:
 
 ```bash
-docker build -t ons-github-app:local .
-docker run --rm -p 8080:8080 --env-file .env ons-github-app:local
+set -a
+source .env
+set +a
+
+uvicorn src.app:app --host 0.0.0.0 --port 8080
+```
+
+In another terminal:
+
+```bash
 curl http://localhost:8080/healthz
 ```
 
-### Option B: Local secret *files* (parity with Cloud Run)
+### 3.2 Run in Docker (parity with Cloud Run)
 
-This mirrors how Cloud Run runs the container.
+This mirrors how Cloud Run runs the container by mounting `./local-secrets` into the container at `/var/secrets`.
 
 ```bash
-mkdir -p ./local-secrets
-printf "%s" "<your-webhook-secret>" > ./local-secrets/github_webhook_secret
-cp /path/to/private-key.pem ./local-secrets/github_private_key
+docker build -t ons-github-app:local .
 
 docker run --rm -p 8080:8080 \
   -e GITHUB_APP_ID=123456 \
   -e GITHUB_ACCEPTED_EVENTS=pull_request \
-  -e GITHUB_PRIVATE_KEY_FILE=/var/secrets/github_private_key \
-  -e GITHUB_WEBHOOK_SECRET_FILE=/var/secrets/github_webhook_secret \
+  -e GITHUB_PRIVATE_KEY_FILE=/var/secrets/github-private-key/private_key \
+  -e GITHUB_WEBHOOK_SECRET_FILE=/var/secrets/github-webhook-secret/webhook_secret \
   -v "${PWD}/local-secrets:/var/secrets:ro" \
   ons-github-app:local
+
+curl http://localhost:8080/healthz
 ```
 
 ## 4) Build and push the image

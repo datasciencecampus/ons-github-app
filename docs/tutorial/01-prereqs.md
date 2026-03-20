@@ -36,13 +36,18 @@ Recommended:
 
 ### Secrets strategy (best practice)
 
-- **Local dev**: you can pass secrets via environment variables (e.g. `docker run --env-file .env ...`).
-- **Cloud Run**: secrets should not be plain env vars.
-  - Store secret values in **Secret Manager**.
-  - Mount them into the container as **files**.
-  - The app reads them via:
-    - `GITHUB_PRIVATE_KEY_FILE`
-    - `GITHUB_WEBHOOK_SECRET_FILE`
+This repo documents a single secrets strategy for both local development and Cloud Run:
+
+- Secrets are stored as **files**.
+- The app is configured with **non-secret** environment variables that point at those files:
+  - `GITHUB_PRIVATE_KEY_FILE`
+  - `GITHUB_WEBHOOK_SECRET_FILE`
+
+Local development:
+- Create a `./local-secrets/` folder (ignored by git) and point the `*_FILE` variables at it.
+
+Cloud Run:
+- Store secret values in **Secret Manager** and mount them into the container as **files**.
 
 This keeps secret values out of container images, build logs, and Terraform state.
 

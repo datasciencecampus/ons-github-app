@@ -2,20 +2,23 @@
 set -euo pipefail
 
 : "${PROJECT_ID:?Set PROJECT_ID}"
-: "${SERVICE_NAME:=ons-github-app}"
 : "${REGION:=europe-west2}"
-: "${GITHUB_APP_ID:?Set GITHUB_APP_ID}"
+: "${ARTIFACT_REPO:=ons-github-app}"
+: "${SERVICE_NAME:=ons-github-app}"
+: "${TAG:=latest}"
 
-: "${GITHUB_ACCEPTED_EVENTS:=pull_request}"
+# This repo's canonical deploy path is Terraform (Cloud Run + API Gateway).
+# This script is a convenience to build and push the container image to Artifact Registry.
+#
+# After running, set the resulting image URI as `image = "..."` in `infra/terraform/terraform.tfvars`
+# and run `terraform apply`.
 
-IMAGE="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest"
+IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${ARTIFACT_REPO}/${SERVICE_NAME}:${TAG}"
 
-gcloud builds submit --tag "${IMAGE}" .
+docker buildx build --platform linux/amd64 \
+  -t "${IMAGE}" \
+  --push .
 
-gcloud run deploy "${SERVICE_NAME}" \
-  --image "${IMAGE}" \
-  --region "${REGION}" \
-  --platform managed \
-  --set-env-vars "GITHUB_APP_ID=${GITHUB_APP_ID},GITHUB_ACCEPTED_EVENTS=${GITHUB_ACCEPTED_EVENTS},GITHUB_PRIVATE_KEY_FILE=/var/secrets/github_private_key,GITHUB_WEBHOOK_SECRET_FILE=/var/secrets/github_webhook_secret" \
-  --secret github-app-private-key=/var/secrets/github_private_key \
-  --secret github-webhook-secret=/var/secrets/github_webhook_secret
+echo
+echo "Pushed image: ${IMAGE}"
+echo "Next: update infra/terraform/terraform.tfvars (image = \"${IMAGE}\") and run terraform apply"

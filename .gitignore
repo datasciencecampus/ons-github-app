@@ -195,9 +195,38 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+!.env.example
 .venv
 env/
 venv/
+
+### Local secrets (do not commit) ###
+# Used by docs/tutorial/04-deploy-and-verify.md for local Secret Manager parity.
+local-secrets/
+
+# Common key/cert bundles that may contain private material.
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.der
+
+### Terraform state & local working dirs (never commit) ###
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.*
+**/crash.log
+**/crash.*.log
+**/override.tf
+**/override.tf.json
+**/*_override.tf
+**/*_override.tf.json
+
+# Repo uses terraform.tfvars.example as the template; keep local tfvars untracked.
+**/terraform.tfvars
 
 # Terraform
 *.tfvars

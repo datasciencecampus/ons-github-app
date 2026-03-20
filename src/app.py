@@ -1,11 +1,11 @@
 import json
 import logging
-from typing import Any, Dict
+from typing import Dict
 
 from fastapi import FastAPI, Header, HTTPException, Request
 
 from src.config import get_accepted_events
-from src.github_app import get_installation_token, post_pr_comment
+from src.github_app import post_pr_comment
 from src.webhook import verify_signature
 
 logging.basicConfig(level=logging.INFO)
@@ -56,8 +56,3 @@ async def github_webhook(
             except Exception:
                 logger.exception("Failed to post PR comment")
     return {"status": "ok"}
-
-
-@app.post("/installations/{installation_id}/token")
-def installation_token(installation_id: int) -> Dict[str, Any]:
-    return get_installation_token(installation_id)
