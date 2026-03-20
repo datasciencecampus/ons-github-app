@@ -82,11 +82,12 @@ resource "google_artifact_registry_repository" "app" {
 }
 
 # Cloud Run service for the GitHub App (deployed only if image is provided)
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service#attributes-reference
 resource "google_cloud_run_v2_service" "app" {
-  count    = local.deploy_app ? 1 : 0
-  name     = var.service_name
-  location = var.region
-
+  count               = local.deploy_app ? 1 : 0
+  name                = var.service_name
+  location            = var.region
+  deletion_protection = false
   template {
     service_account = google_service_account.app.email
 
@@ -177,7 +178,7 @@ resource "google_api_gateway_api_config" "webhook" {
     document {
       path = "${path.module}/api-config.yaml"
       contents = base64encode(templatefile("${path.module}/api-config.yaml", {
-        service_url = google_cloud_run_v2_service.app[0].uri
+        service_url = "https://${var.service_name}-${data.google_project.project.number}.${var.region}.run.app"
       }))
     }
   }
