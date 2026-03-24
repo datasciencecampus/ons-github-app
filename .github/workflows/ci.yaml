@@ -1,32 +1,61 @@
-name: CI Security Scan
-permissions:
-  contents: read
+name: CI
 
 on:
   push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
+    branches: ["main"]
+
+env:
+  TERRAFORM_VERSION: "1.13.5" # terraform version
+
+permissions:
+  contents: read
 
 jobs:
-  security-scan:
+  tf-fmt:
+    name: Terraform fmt
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6.0.2
-
-
-      - name: Run Checkov
-        uses: bridgecrewio/checkov-action@v12
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      - name: Run terraform fmt
+        run: terraform fmt -recursive -check -diff
+  # TEMPORARILY DISABLED DUE TO SECURITY INCIDENT
+  # trivy:
+  #   name: trivy
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+  #     - name: Trivy scan
+  #       uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+  #       with:
+  #         scan-type: fs
+  #         scan-ref: .
+  #         trivy-config: configs/trivy.yaml
+  checkov:
+    name: Checkov
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkov scan
+        uses: bridgecrewio/checkov-action@2fd3901c8feb52417f27f0d9800259a106c1ec1e # v12
         with:
           directory: .
           config_file: configs/checkov.yml
 
-      - name: Run Trivy on repo
-        uses: aquasecurity/trivy-action@0.35.0
-        with:
-          scan-type: fs
-          path: .
-          trivy-config: configs/trivy.yaml
+  tflint:
+    name: TFLint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: TFLint scan
+        uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
+      - name: Run TFLint
+        run: tflint --config=configs/.tflint.hcl
